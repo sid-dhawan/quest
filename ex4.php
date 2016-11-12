@@ -7,7 +7,7 @@
 <h1>Search Results: -</h1>
 <? $a=$_GET["keyword"];
 
-$conn = new mysqli("localhost","root","linux","search");
+$conn = new mysqli("localhost","root","meetsid20","search");
 $sql = "SELECT Word, URL FROM search";
 $result = $conn->query($sql);
 $cnt=0;
