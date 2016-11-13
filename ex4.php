@@ -7,16 +7,12 @@
 <h1>Search Results: -</h1>
 <? $a=$_GET["keyword"];
 
-$conn = new mysqli("localhost","root","meetsid20","search");
-$sql = "SELECT Word, URL FROM search";
+$conn = new mysqli("localhost","root","meetsid20","Search_Engine");
+$sql = "SELECT * FROM Search  WHERE Word=\"".$a."\" ORDER BY Freq DESC";
 $result = $conn->query($sql);
 $cnt=0;
 while ($var=$result->fetch_assoc()) {
-	if ($a==$var["Word"])
-	{
-		
 		echo "<a href=\"".$var["URL"]."\">".$var["URL"]."</a><br>";
-	}
 }
 
 ?>
