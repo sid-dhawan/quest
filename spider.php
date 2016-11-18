@@ -12,6 +12,9 @@ function get_freq($s)
 	$freq=array();
 	foreach($list as $word)
 	{
+		$word=preg_replace('/[^a-zA-Z0-9]/','',$word);
+		if(empty($word))
+			continue;
 		if(isset($freq[$word]))
 			$freq[$word]++;
 		else
@@ -25,31 +28,22 @@ function document_similarity($page1,$page2)
 	$freq2=get_freq($page2);
 	$mag1=0;
 	foreach($freq1 as $word => $cnt)
-	{
-		if(empty($word))
-			continue;
 		$mag1=$mag1+($cnt*$cnt);
-	}
 	$mag2=0;
 	foreach($freq2 as $word => $cnt)
-	{
-		if(empty($word))
-			continue;
 		$mag2+=$cnt*$cnt;
-	}
 	$mag1=sqrt($mag1);
 	$mag2=sqrt($mag2);
-	if($mag1*1.0/$mag2<0.8||$mag2*1.0/$mag1<0.8)
-		return 0;
 	$dot=0;
 	foreach($freq1 as $word => $cnt)
 	{
-		if(empty($word))
-			continue;
 		if(isset($freq2[$word]))
 			$dot+=$cnt*$freq2[$word];
 	}
-	return ($dot*1.0)/($mag1*$mag2);
+	if($mag1!=0&&$mag2!=0)
+		return ($dot*1.0)/($mag1*$mag2);
+	else
+		return 1;
 }
 function is_similar($page1)
 {
@@ -62,24 +56,23 @@ function is_similar($page1)
 }
 function url_exists($url)
 {
-	if(strpos($url,".pdf")!=false)
-		return false;
     $headers = @get_headers($url);
     if (is_array($headers))
     {
-    	$flag=false;
+    	$flag1=$flag2=false;
     	foreach($headers as $x)
     	{
     		if(strpos($x,"html")!=false)
     		{
-    			$flag=true;
+    			$flag1=true;
     			break;
     		}
+    		if(strpos($x,"200 OK")!=false)
+    		{
+    			$flag2=true;
+    		}
     	}
-        if(!strpos($headers[0], '200'))
-            return false && $flag;
-        else
-            return true && $flag;    
+        return $flag1 && $flag2;    
     }         
     else
         return false;
@@ -93,13 +86,11 @@ while($yaH=$result->fetch_assoc())
 	array_push($q,$yaH["URL"]);
 	$visited[$yaH["URL"]]=1;
 }
-$q=array();
-array_push($q,"https://iiitd.ac.in");
-$visited=array();
-$visited["https://iiitd.ac.in"]=1;
 $count=0;
 while(count($q)>0)
 {
+	if($count>=2000)
+		break;
 	$URL=$q[count($q)-1];
 	array_pop($q);
 	$html = new simple_html_dom();
@@ -109,21 +100,16 @@ while(count($q)>0)
 		continue;
 	if(is_similar($html->plaintext))
 		continue;
-	else if($html!=NULL && isset($html) && is_object($html) && !empty($html) && isset($html->nodes))
+	else
 		array_push($GLOBALS["documents"],$html->plaintext);
 	$count++;
-	if($count>20)
-		break;
 	echo "Link ".$count."		Depth ".$visited[$URL]."		".$URL."<br><br>".$html->plaintext."<br><br>---------------------<br>";
 	$freq=get_freq($html->plaintext);
 	foreach($freq as $word=>$cnt)
 	{
-		if(empty($word))
-			continue;
-		$sql="insert into Search values(\"".$word."\",\"".$URL."\",".$cnt.")";
+		$sql="insert into Search values(\"".$word."\",\"".$URL."\",".$cnt.",\"".$html->find("title",0)->innertext."\")";
 		$conn->query($sql);
 	}
-	//Indexer Code goes here
 	if($html!=NULL && isset($html) && is_object($html) && !empty($html) && isset($html->nodes))
 		$links=$html->find("a");
 	else
@@ -158,7 +144,6 @@ while(count($q)>0)
 				{
 					$visited[$new]=$visited[$URL]+1;
 					array_unshift($q, $new);
-					echo "-----------------------".$new."<br>";
 				}
 			}
 		}
