@@ -1,57 +1,23 @@
-<html>
-<head>
-</head>
-<body>
 <?
+//Crawls webpages starting with a list of seed URLs 
+//Stores the fetched documents into the Documents database allotting each document a unique ID.
 ini_set("max_execution_time",'300');
-include_once("simple_html_dom.php");
-$GLOBALS["documents"]=array();
-function get_freq($s)
-{
-	$list=explode(' ',$s);
-	$freq=array();
-	foreach($list as $word)
-	{
-		$word=preg_replace('/[^a-zA-Z0-9]/','',$word);
-		if(empty($word))
-			continue;
-		if(isset($freq[$word]))
-			$freq[$word]++;
-		else
-			$freq[$word]=1;
-	}
-	return $freq;
-}
-function document_similarity($page1,$page2)
-{
-	$freq1=get_freq($page1);
-	$freq2=get_freq($page2);
-	$mag1=0;
-	foreach($freq1 as $word => $cnt)
-		$mag1=$mag1+($cnt*$cnt);
-	$mag2=0;
-	foreach($freq2 as $word => $cnt)
-		$mag2+=$cnt*$cnt;
-	$mag1=sqrt($mag1);
-	$mag2=sqrt($mag2);
-	$dot=0;
-	foreach($freq1 as $word => $cnt)
-	{
-		if(isset($freq2[$word]))
-			$dot+=$cnt*$freq2[$word];
-	}
-	if($mag1!=0&&$mag2!=0)
-		return ($dot*1.0)/($mag1*$mag2);
-	else
-		return 1;
-}
+require_once("content-compare.php");
+require_once("simple_html_dom.php");
+require_once("stemmer.php");
 function is_similar($page1)
 {
-	foreach($GLOBALS["documents"] as $page2)
+	$conn=new mysqli("localhost","root","meetsid20","Search_Engine");
+	$result=$conn->query("select Content from Documents");
+	while($page=$result->fetch_assoc())
 	{ 
-		if(document_similarity($page1,$page2)>=0.9)
+		if(document_similarity($page1,$page["Content"])>=0.9)
+		{
+			$conn->close();
 			return true;
+		}
 	}
+	$conn->close();
 	return false;
 }
 function url_exists($url)
@@ -89,7 +55,7 @@ while($yaH=$result->fetch_assoc())
 $count=0;
 while(count($q)>0)
 {
-	if($count>=2000)
+	if($count>=20)
 		break;
 	$URL=$q[count($q)-1];
 	array_pop($q);
@@ -98,18 +64,14 @@ while(count($q)>0)
 		$html=file_get_html($URL);
 	else
 		continue;
-	if(is_similar($html->plaintext))
+	$title=$html->find("title",0)->innertext;
+	$content=$html->plaintext;
+	if(is_similar($content)||$content=="")
 		continue;
-	else
-		array_push($GLOBALS["documents"],$html->plaintext);
 	$count++;
-	echo "Link ".$count."		Depth ".$visited[$URL]."		".$URL."<br><br>".$html->plaintext."<br><br>---------------------<br>";
-	$freq=get_freq($html->plaintext);
-	foreach($freq as $word=>$cnt)
-	{
-		$sql="insert into Search values(\"".$word."\",\"".$URL."\",".$cnt.",\"".$html->find("title",0)->innertext."\")";
-		$conn->query($sql);
-	}
+	$stem_content_json=json_encode(get_stem_words($content));
+	$stem_title_json=json_encode(get_stem_words($title));
+	$conn->query("insert into Documents values(null,'$URL','$title','$content','$stem_title_json','$stem_content_json')");
 	if($html!=NULL && isset($html) && is_object($html) && !empty($html) && isset($html->nodes))
 		$links=$html->find("a");
 	else
@@ -134,7 +96,7 @@ while(count($q)>0)
 					else 
 						$new=substr($URL,0,strpos($URL,"/",strpos($URL,":")+3)).$new;
 				}
-				if(strpos($new,"?")!=false)
+				if(strpos($new,"?")!=false)//Unclean URL elimination
 				{
 					$new=substr($new,0,strpos($new,"?"));
 				}
@@ -151,5 +113,3 @@ while(count($q)>0)
 }
 $conn->close();
 ?>
-</body>
-</html>
