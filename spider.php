@@ -8,10 +8,10 @@ require_once("stemmer.php");
 function is_similar($page1)
 {
 	$conn=new mysqli("localhost","root","meetsid20","Search_Engine");
-	$result=$conn->query("select Content from Documents");
+	$result=$conn->query("select * from Documents");
 	while($page=$result->fetch_assoc())
-	{ 
-		if(document_similarity($page1,$page["Content"])>=0.9)
+	{
+		if(document_similarity($page1,json_decode($page["ContentStem"],true))>=0.9)
 		{
 			$conn->close();
 			return true;
@@ -66,11 +66,13 @@ while(count($q)>0)
 		continue;
 	$title=$html->find("title",0)->innertext;
 	$content=$html->plaintext;
-	if(is_similar($content)||$content=="")
+	$content_stem=get_stem_words($content);
+	$title_stem=get_stem_words($title);
+	if(is_similar($content_stem)||$content=="")
 		continue;
 	$count++;
-	$stem_content_json=json_encode(get_stem_words($content));
-	$stem_title_json=json_encode(get_stem_words($title));
+	$stem_content_json=json_encode($content_stem);
+	$stem_title_json=json_encode($title_stem);
 	$conn->query("insert into Documents values(null,'$URL','$title','$content','$stem_title_json','$stem_content_json')");
 	if($html!=NULL && isset($html) && is_object($html) && !empty($html) && isset($html->nodes))
 		$links=$html->find("a");

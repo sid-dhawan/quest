@@ -11,4 +11,5 @@ function get_stop_list()
 	$conn->close();
 	return $ret;
 }
+get_Stop_list();
 ?>
