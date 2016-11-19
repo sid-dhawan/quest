@@ -1,13 +1,13 @@
 <?
 //Crawls webpages starting with a list of seed URLs 
 //Stores the fetched documents into the Documents database allotting each document a unique ID.
-ini_set("max_execution_time",'300');
+ini_set("max_execution_time",'6000');
 require_once("content-compare.php");
 require_once("simple_html_dom.php");
 require_once("stemmer.php");
 function is_similar($page1)
 {
-	$conn=new mysqli("localhost","root","meetsid20","Search_Engine");
+	$conn = new mysqli("localhost","root","meetsid20","Search_Engine");
 	$result=$conn->query("select * from Documents");
 	while($page=$result->fetch_assoc())
 	{
@@ -55,7 +55,7 @@ while($yaH=$result->fetch_assoc())
 $count=0;
 while(count($q)>0)
 {
-	if($count>=20)
+	if($count>=1500)
 		break;
 	$URL=$q[count($q)-1];
 	array_pop($q);
@@ -102,7 +102,7 @@ while(count($q)>0)
 				{
 					$new=substr($new,0,strpos($new,"?"));
 				}
-				if(strpos($new,"http")===false)
+				if(strpos($new,"iiit")===false)
 					continue;
 				if(!isset($visited[$new]))
 				{

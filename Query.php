@@ -27,6 +27,11 @@ $relevant=ranker($_GET["keyword"],$relevant);?>
 	<title>Search Results</title>
 	<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
 	<style>
+	#top{
+		position:fixed;
+		bottom:0;
+		right:10px;
+	}
 	.jumbotron a{
 		font-family: "Comic Sans MS";
 		font-size: 150%;
@@ -68,14 +73,14 @@ echo "($cnt results)"?>
 	$URL=$document["URL"];
 	$title=$document["Title"];
 	$content=array();
-	$content=split("[ ,;\n\r\t]+", trim(strip($document["Content"])));
-	$tokenList=split("[ ,;\n\r\t]+", trim(strip($_GET["keyword"])));
+	$content=split("[ ,;\n\r\t]+", trim($document["Content"]));
+	$tokenList=split("[ ,;\n\r\t]+", trim($_GET["keyword"]));
 	$matches=array();
 	foreach($tokenList as $token)
 	{
 		for($i=0;$i<count($content);$i++)
 		{
-			if($stemmer->stem($token)==$stemmer->stem($content[$i]))
+			if($stemmer->stem(strip($token))==$stemmer->stem(strip($content[$i])))
 			{
 				$content[$i]="<b>".$content[$i]."</b>";
 				array_push($matches,$i);
@@ -99,12 +104,10 @@ echo "($cnt results)"?>
 }
 $conn->close();
 ?>
-<p>
-<a href="#top" class="btn btn-primary" role="button">Back to Top</a>
-</p>
 </div>
 </div>
 </div>
+<a href="#top" id="top" class="btn btn-primary" role="button">Back to Top</a>
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.1.3/jquery.min.js"></script>
 <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/js/bootstrap.min.js"></script>
 </body>

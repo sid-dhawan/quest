@@ -21,4 +21,6 @@ function document_similarity($freq1,$freq2)
 	else
 		return false;
 }
+function proximity()
+function 
 ?>
